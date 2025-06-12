@@ -62,7 +62,14 @@ async def start_test(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ask_word(update, context)
 
 async def ask_word(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    idx = context.user_data['current']
+    if 'test_words' not in context.user_data:
+        if hasattr(update, 'message') and update.message:
+            await update.message.reply_text("Сессия устарела. Пожалуйста, начни заново с /start.")
+        elif hasattr(update, 'callback_query') and update.callback_query:
+            await update.callback_query.message.reply_text("Сессия устарела. Пожалуйста, начни заново с /start.")
+        return
+
+    idx = context.user_data.get('current', 0)
     test_words = context.user_data['test_words']
     if idx >= len(test_words):
         score = context.user_data['score']
@@ -79,15 +86,22 @@ async def ask_word(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
         return
+
     word = test_words[idx]['Wort']
     await update.message.reply_text(f"Переведи: {word}")
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if 'test_words' not in context.user_data:
+        await update.message.reply_text("Сначала выбери тест (/start)!")
+        return
+
     answer = update.message.text.strip().lower()
     idx = context.user_data.get('current', 0)
-    test_words = context.user_data.get('test_words', [])
-    if not test_words or idx >= len(test_words):
+    test_words = context.user_data['test_words']
+
+    if idx >= len(test_words):
         return
+
     correct = test_words[idx]['Перевод'].strip().lower()
     if answer == correct:
         await update.message.reply_text("Верно!")
@@ -101,11 +115,19 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     data = query.data
+
     if data == 'repeat':
+        if 'test_words' not in context.user_data:
+            await query.message.reply_text("Сессия устарела. Начни заново с /start.")
+            return
         context.user_data['current'] = 0
         await ask_word(query, context)
+
     elif data == 'new':
         test_name = context.user_data.get('current_test')
+        if not test_name:
+            await query.message.reply_text("Сначала выбери тест заново с /start.")
+            return
         words = load_words(test_name)
         selection = random.sample(words, min(10, len(words)))
         context.user_data['to_learn'] = selection
@@ -117,11 +139,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             msg += f"{w['Wort']} – {w['Перевод']}\n"
         msg += "\nКогда будешь готов(а), напиши /start_test"
         await query.message.reply_text(msg)
+
     elif data.startswith('choose_'):
         await choose_test(update, context)
 
 def main():
-    token = os.getenv("BOT_TOKEN") or "7876094199:AAEursuAwoRiLR_Byvb5O2lGkvqHlf3zMxU"
+    token = os.getenv("BOT_TOKEN") or "YOUR_TOKEN_HERE"
     app = ApplicationBuilder().token(token).build()
 
     app.add_handler(CommandHandler("start", start))

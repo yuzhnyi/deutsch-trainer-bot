@@ -1,12 +1,8 @@
 import os
 import random
 import pandas as pd
-from telegram import (
-    Update,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    Message
-)
+import logging
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -15,6 +11,9 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
 
 WORDS_DIR = "words"  # Папка с файлами слов
 
@@ -155,3 +154,6 @@ def main():
 
     print("Бот запущен!")
     app.run_polling()
+
+if __name__ == "__main__":
+    main()

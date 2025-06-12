@@ -5,6 +5,7 @@ from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    Message
 )
 from telegram.ext import (
     ApplicationBuilder,
@@ -63,10 +64,8 @@ async def start_test(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def ask_word(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if 'test_words' not in context.user_data:
-        if hasattr(update, 'message') and update.message:
-            await update.message.reply_text("Сессия устарела. Пожалуйста, начни заново с /start.")
-        elif hasattr(update, 'callback_query') and update.callback_query:
-            await update.callback_query.message.reply_text("Сессия устарела. Пожалуйста, начни заново с /start.")
+        target = update.message if update.message else update.callback_query.message
+        await target.reply_text("Сессия устарела. Пожалуйста, начни заново с /start.")
         return
 
     idx = context.user_data.get('current', 0)
@@ -81,14 +80,16 @@ async def ask_word(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text(
+        target = update.message if update.message else update.callback_query.message
+        await target.reply_text(
             f"Тест окончен!\nВерных ответов: {score} из {total}",
             reply_markup=reply_markup
         )
         return
 
     word = test_words[idx]['Wort']
-    await update.message.reply_text(f"Переведи: {word}")
+    target = update.message if update.message else update.callback_query.message
+    await target.reply_text(f"Переведи: {word}")
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if 'test_words' not in context.user_data:
@@ -120,8 +121,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if 'test_words' not in context.user_data:
             await query.message.reply_text("Сессия устарела. Начни заново с /start.")
             return
-        context.user_data['current'] = 0
-        await ask_word(query, context)
+        fake_update = Update(update.update_id, message=query.message)
+        await ask_word(fake_update, context)
 
     elif data == 'new':
         test_name = context.user_data.get('current_test')
@@ -144,7 +145,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await choose_test(update, context)
 
 def main():
-    token = os.getenv("BOT_TOKEN") or "YOUR_TOKEN_HERE"
+    token = "7876094199:AAEursuAwoRiLR_Byvb5O2lGkvqHlf3zMxU"
     app = ApplicationBuilder().token(token).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -154,6 +155,3 @@ def main():
 
     print("Бот запущен!")
     app.run_polling()
-
-if __name__ == "__main__":
-    main()

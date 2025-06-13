@@ -14,7 +14,7 @@ from telegram.ext import (
 
 # ----------------- Настройки -----------------
 TOKEN = "7876094199:AAEursuAwoRiLR_Byvb5O2lGkvqHlf3zMxU"  # Токен явно указан, как просил
-WORDS_DIR = "."  # все CSV-файлы лежат в корне проекта
+WORDS_DIR = "words"  # все CSV-файлы лежат в корне проекта
 
 # ----------------- Помощники -----------------
 def list_csv_files():
